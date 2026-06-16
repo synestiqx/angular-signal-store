@@ -186,6 +186,18 @@ export class SignalStore {
     return this.storeInstances[name];
   }
 
+  /**
+   * Register a store instance built directly via `new CreateStore(name)` so that
+   * `getStore(name)` (used by typed array operations, base manager, etc.) resolves it.
+   * Idempotent: the createStore factory assigns the same instance afterwards, and a
+   * second direct construction with the same name is left to the factory's own guard.
+   */
+  registerStoreInstance(name: string, instance: CreateStore<StoreData>): void {
+    if (name && !this.storeInstances[name]) {
+      this.storeInstances[name] = instance;
+    }
+  }
+
   destroyStore(name: string): void {
     const storeInstance = this.storeInstances[name] as (CreateStore<StoreData> & {
       createServiceGetter?: {

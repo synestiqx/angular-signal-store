@@ -262,6 +262,11 @@ export class CreateStore<T extends StoreData = StoreData> {
     }
     // Default: sync version bumps for JSON-like read-after-write behavior
     this.createService.setAutoBatchBumps(false);
+
+    // Self-register so getStore(storeName) resolves instances built directly via
+    // `new CreateStore(...)` (e.g. tests / advanced usage), not only via the createStore
+    // factory. The factory re-registers the same instance afterwards — idempotent.
+    this.signalStore.registerStoreInstance(storeName, this as unknown as CreateStore<StoreData>);
   }
 
   // Removed: getDevTools() - DevService now injected via constructor
