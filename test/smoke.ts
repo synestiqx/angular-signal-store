@@ -5,7 +5,7 @@
  */
 import { CreateStore, SignalStore } from '../src/index';
 import { computed } from '@angular/core';
-import { where, update, moveToMatches } from 'jsnq';
+import { where, update, moveToMatches } from '@adsq/jsnq';
 
 function assert(condition: unknown, message: string): void {
   if (!condition) throw new Error(`Assertion failed: ${message}`);

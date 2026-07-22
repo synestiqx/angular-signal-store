@@ -1,5 +1,5 @@
 {
-  "name": "angular-signal-store",
+  "name": "@adsq/angular-signal-store",
   "version": "0.1.0",
   "description": "Angular SignalStore — reactive, proxy-based store with fine-grained signal wake. Uses jsnq (separate dependency) for queries/mutations.",
   "repository": {
@@ -9,15 +9,15 @@
   "homepage": "https://github.com/synestiqx/angular-signal-store#readme",
   "bugs": "https://github.com/synestiqx/angular-signal-store/issues",
   "type": "module",
-  "module": "fesm2022/angular-signal-store.mjs",
+  "module": "fesm2022/adsq-angular-signal-store.mjs",
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "default": "./fesm2022/angular-signal-store.mjs"
+      "default": "./fesm2022/adsq-angular-signal-store.mjs"
     },
     "./devtools": {
       "types": "./devtools/index.d.ts",
-      "default": "./fesm2022/angular-signal-store-devtools.mjs"
+      "default": "./fesm2022/adsq-angular-signal-store-devtools.mjs"
     },
     "./package.json": {
       "default": "./package.json"
@@ -31,8 +31,8 @@
   ],
   "peerDependencies": {
     "@angular/core": ">=20.0.0 <23.0.0",
-    "jsnq": "^0.1.0",
-    "rxjs": "^6.5.3 || ^7.4.0"
+    "rxjs": "^6.5.3 || ^7.4.0",
+    "@adsq/jsnq": "^0.1.0"
   },
   "keywords": [
     "angular",
@@ -41,7 +41,7 @@
     "state-management",
     "reactive",
     "proxy",
-    "jsnq"
+    "@adsq/jsnq"
   ],
   "license": "MIT",
   "typings": "index.d.ts",

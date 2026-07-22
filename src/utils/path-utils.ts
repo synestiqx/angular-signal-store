@@ -25,7 +25,7 @@ import {
   createJsonPathPlan,
   getJsonPlanCacheStats,
   setJsonPlanCacheLimit,
-} from 'jsnq/core/data-engine';
+} from '@adsq/jsnq/core/data-engine';
 
 export type { VersionDependencyMode } from './path-core';
 

@@ -313,4 +313,4 @@ function provideSignalStoreDevtools() {
  */
 
 export { DevService, provideSignalStoreDevtools };
-//# sourceMappingURL=angular-signal-store-devtools.mjs.map
+//# sourceMappingURL=adsq-angular-signal-store-devtools.mjs.map

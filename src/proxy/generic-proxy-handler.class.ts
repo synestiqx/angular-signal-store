@@ -7,16 +7,16 @@ import { logger } from '../utils/logger';
 // Deep imports on purpose: this file sits in the INITIAL bundle graph. Importing the
 // jsnq barrel here would hoist every operator re-export into the initial chunk even
 // though operators are only used by lazy pages (esbuild shared-chunk assignment).
-import JsnqPipeline from 'jsnq/core/pipeline';
-import type { JsonOperator, PipelineStats, JsonLike } from 'jsnq/core/types';
-import { cloneJsonData } from 'jsnq/core/data-engine';
+import JsnqPipeline from '@adsq/jsnq/core/pipeline';
+import type { JsonOperator, PipelineStats, JsonLike } from '@adsq/jsnq/core/types';
+import { cloneJsonData } from '@adsq/jsnq/core/data-engine';
 import {
   applyDeepSugarPatch,
   collectPipelineIntent,
   isDeepSugarAction,
   tryFastPipelineMutation,
   tryFastStructuralMutation,
-} from 'jsnq/core/pipeline-fastpath';
+} from '@adsq/jsnq/core/pipeline-fastpath';
 import type { CreateStoreService } from '../core/create-store.core';
 import { computed, Signal } from '@angular/core';
 import { hashString } from '../utils/array-query-key.utils';

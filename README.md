@@ -1,13 +1,13 @@
 # Angular SignalStore
 
-Angular signal store with a callable nested proxy API. It uses the independent `jsnq` package for path traversal, queries, and copy-on-write mutation hot paths.
+Angular signal store with a callable nested proxy API. It uses the independent `@adsq/jsnq` package for path traversal, queries, and copy-on-write mutation hot paths.
 
 ## Install
 
 ```sh
-npm install jsnq angular-signal-store
+npm install @adsq/jsnq @adsq/angular-signal-store
 # or
-bun add jsnq angular-signal-store
+bun add @adsq/jsnq @adsq/angular-signal-store
 ```
 
 Angular, RxJS, and JSNQ are peers. The package supports Angular 20 through 22, is APF partial-compiled with the lowest supported Angular version, and is tested against the current Angular 22 line. This avoids a second Angular runtime and keeps forward linker compatibility.
@@ -16,7 +16,7 @@ Angular, RxJS, and JSNQ are peers. The package supports Angular 20 through 22, i
 
 ```ts
 import { Injectable } from '@angular/core';
-import { SignalStore } from 'angular-signal-store';
+import { SignalStore } from '@adsq/angular-signal-store';
 
 type AppState = {
   user: { name: string; tags: string[]; preferences?: Record<string, unknown> };
@@ -71,8 +71,8 @@ Declare optional fields or an index signature when TypeScript must accept keys t
 ## JSNQ Operations
 
 ```ts
-import where from 'jsnq/operators/where';
-import update from 'jsnq/operators/update';
+import where from '@adsq/jsnq/operators/where';
+import update from '@adsq/jsnq/operators/update';
 
 store.users.mutate(
   where('active', '===', true),
@@ -157,7 +157,7 @@ indices and reactive `length` reads.
 
 ```ts
 import { ApplicationConfig, isDevMode } from '@angular/core';
-import { provideSignalStoreDevtools } from 'angular-signal-store/devtools';
+import { provideSignalStoreDevtools } from '@adsq/angular-signal-store/devtools';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -170,9 +170,9 @@ Applications that never import the `/devtools` entry do not load its implementat
 
 ## Package Entries
 
-- `angular-signal-store`: store runtime and public types.
-- `angular-signal-store/devtools`: optional development adapter/provider.
-- `jsnq/operators/<name>`: focused JSNQ operators.
+- `@adsq/angular-signal-store`: store runtime and public types.
+- `@adsq/angular-signal-store/devtools`: optional development adapter/provider.
+- `@adsq/jsnq/operators/<name>`: focused JSNQ operators.
 
 ## Verify
 
