@@ -68,7 +68,7 @@ interface StorePipelineBuilder {
 type StorePipelineEntry = StorePipelineBuilder & ((...ops: Array<JsonOperator<JsnqPipeline>>) => StorePipelineBuilder);
 type ProxyApiMethod =
   | 'mutate' | 'query' | 'pipeline'
-  // opinia5: $-prefixed, collision-free jsnq read surface (parity with solid-store)
+  // $-prefixed, collision-free jsnq read surface (parity with solid-store)
   | '$mutate' | '$query' | '$queryOne' | '$liveQuery' | '$liveQueryOne';
 type ReactivePipelineMode = 'all' | 'first' | 'count';
 type ReactivePipelineResultHandler = (pipeline: JsnqPipeline) => unknown;
@@ -513,7 +513,7 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
   }
 
   /**
-   * opinia5: one-shot snapshot query using the JSNQ DSL. Returns matched values (not result
+   * one-shot snapshot query using the JSNQ DSL. Returns matched values (not result
    * nodes), mirroring solid-store's $query/$queryOne. Non-reactive — reads the current value once.
    */
   private createSnapshotQueryMethod(mode: 'all' | 'first'): (...ops: Array<JsonOperator<JsnqPipeline>>) => unknown {
@@ -538,7 +538,7 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
   }
 
   /**
-   * opinia5: reactive live query — a callable accessor (read it in a computed/effect/template)
+   * reactive live query — a callable accessor (read it in a computed/effect/template)
    * that recomputes when the queried branch changes. Built on the existing reactive pipeline
    * builder (version-tracked Angular computed); maps result nodes to matched values.
    */

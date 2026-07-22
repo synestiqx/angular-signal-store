@@ -27,7 +27,7 @@ export type StoreProxy<T extends StoreData = StoreData> = {
 } & IStoreInstance<T>;
 
 /**
- * opinia5 parity: type vocabulary for the $-namespace (reactive jsnq read/subscribe surface)
+ * type vocabulary for the $-namespace (reactive jsnq read/subscribe surface)
  * exposed at runtime by every proxy node (createSnapshotQueryMethod / createLiveQueryMethod /
  * proxyApiHandlers). Mirrors solid-store's StoreLeaf $-methods. These are intentionally NOT wired
  * into the pervasive `CallableProxy<T>` type (which, by existing convention, also leaves the bare
