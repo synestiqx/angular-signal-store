@@ -1,5 +1,5 @@
 ---
-name: @adsq/angular-signal-store
+name: angular-signal-store
 description: Use @adsq/angular-signal-store to build Angular state as a callable nested proxy — reads like store.user.name(), writes like store.user.name = 'Ada', with per-path signal wake and JSNQ queries over arrays. Use when writing or reviewing Angular components, services, or templates in a project that depends on @adsq/angular-signal-store, and when building live-editing UIs such as slider-driven design tools.
 ---
 
