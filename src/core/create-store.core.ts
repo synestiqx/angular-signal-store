@@ -24,7 +24,7 @@ import { DependencyTracker } from './services/dependency-tracker';
 import { VersionBumpCoordinator } from './services/version-bump-coordinator';
 import { VersionBumpPolicy } from './services/version-bump-policy';
 import { ReactivityWakeupService, type WakeUpPathOptions } from './services/reactivity-wakeup.service';
-import type { DevService } from '../devtools/dev.service';
+import type { AngularStoreDevtools } from './devtools-contract';
 import { DevToolsEmitter } from '../utils/abstracts/dev-tools-emitter';
 
 type ArrayQueryPredicate<E, M extends ArrayQueryMethod | 'length'> =
@@ -47,6 +47,7 @@ const STORE_WAKEUP_MODE_ALIASES: Record<StoreWakeupMode, CanonicalStoreWakeupMod
 
 export class CreateStoreService<TState extends StoreData = StoreData> {
   private readonly dependencyTracker = new DependencyTracker();
+  private usingComputedStoreFallback = false;
 
   startCollect(): void { this.dependencyTracker.startCollect(); }
   stopCollect(): Set<string> | null { return this.dependencyTracker.stopCollect(); }
@@ -152,11 +153,11 @@ export class CreateStoreService<TState extends StoreData = StoreData> {
   private readonly devToolsEmitter = new DevToolsEmitter(
     () => this.signalStore.devActive,
     (event) => {
-      const ds = (this.signalStore as unknown as { devService?: DevService }).devService;
+      const ds = this.signalStore.getDevtoolsAdapter();
       if (ds) ds.emitAction(event);
     },
     (event) => {
-      const ds = (this.signalStore as unknown as { devService?: DevService }).devService;
+      const ds = this.signalStore.getDevtoolsAdapter();
       if (ds) ds.emitRead(event);
     }
   );
@@ -237,12 +238,17 @@ export class CreateStoreService<TState extends StoreData = StoreData> {
 
   // Type-safe selection API: select(fn) and computedOf(fn)
   private getStoreProxy(): TState {
-    if (this._storeProxy) return this._storeProxy;
+    if (this._storeProxy) {
+      this.usingComputedStoreFallback = false;
+      return this._storeProxy;
+    }
     try {
       this._storeProxy = this.signalStore.useStore(this.storeName) as unknown as TState;
+      this.usingComputedStoreFallback = false;
       return this._storeProxy;
     } catch {
       // Fallback for standalone CreateStore instances (no proxy registered)
+      this.usingComputedStoreFallback = true;
       return this.getComputedStore() as unknown as TState;
     }
   }
@@ -258,8 +264,12 @@ export class CreateStoreService<TState extends StoreData = StoreData> {
       let computing = false;
       let pending = false;
 
-      const toDepPaths = (deps: string[]): string[] =>
-        Array.from(new Set(deps.map((dep) => this.resolveVersionPathNormalized(dep)))).sort();
+      const toDepPaths = (deps: string[]): string[] => {
+        const tracked = deps.length === 0 && this.usingComputedStoreFallback
+          ? Object.keys(this.getComputedStore())
+          : deps;
+        return Array.from(new Set(tracked.map((dep) => this.resolveVersionPathNormalized(dep)))).sort();
+      };
 
       const resubscribe = (depPaths: string[]) => {
         const nextKey = depPaths.join('\0');
@@ -661,6 +671,7 @@ export class CreateStoreService<TState extends StoreData = StoreData> {
     this.clearPathSegmentCache('');
     this.observableMethodCache = Object.create(null);
     this._storeProxy = undefined;
+    this.usingComputedStoreFallback = false;
   }
 
   // ------------------

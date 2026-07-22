@@ -25,7 +25,7 @@ import {
   createJsonPathPlan,
   getJsonPlanCacheStats,
   setJsonPlanCacheLimit,
-} from '@synestiqx/jsondb/core/data-engine';
+} from '@synestiqx/jsnq/core/data-engine';
 
 export type { VersionDependencyMode } from './path-core';
 
@@ -293,8 +293,8 @@ export class PathUtils {
 
   static splitPathExpression(path: string): readonly string[] {
     if (!path) return [];
-    // jsondb data-engine is the SSOT for path-expression parsing; its bounded
-    // plan cache backs this API, so parsing behaves exactly like inside jsondb.
+    // jsnq data-engine is the SSOT for path-expression parsing; its bounded
+    // plan cache backs this API, so parsing behaves exactly like inside jsnq.
     return createJsonPathPlan(path).segments;
   }
 

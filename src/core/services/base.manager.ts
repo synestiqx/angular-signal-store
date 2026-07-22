@@ -1,6 +1,6 @@
 import type { CreateStoreService } from '../create-store.core';
 import type { SignalStore } from '../signal-store.service';
-import type { DevService } from '../../devtools/dev.service';
+import type { AngularStoreDevtools } from '../devtools-contract';
 import { PathUtils } from '../../utils/path-utils';
 import { PathValidator } from '../../utils/path-validator';
 import type { StoreDevToolsAction } from '../../devtools/types';
@@ -54,10 +54,8 @@ export abstract class BaseManager<TStore extends StoreData = StoreData> {
   /**
    * Get DevService instance (lazy loaded, only when devActive).
    */
-  protected get devService(): DevService | undefined {
-    return this.signalStore.devActive
-      ? (this.signalStore as unknown as { devService: DevService }).devService
-      : undefined;
+  protected get devService(): AngularStoreDevtools | undefined {
+    return this.signalStore.devActive ? this.signalStore.getDevtoolsAdapter() : undefined;
   }
 
   /**

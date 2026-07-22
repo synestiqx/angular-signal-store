@@ -40,7 +40,7 @@ export class ArrayMethodHandler {
 
   private static normalizeSpliceArgs(args: unknown[]): NormalizedMutationArgs {
     const [start, deleteCount, ...items] = args;
-    return { value: { start, deleteCount, items }, extra: [] };
+    return { value: { start, deleteCount: args.length > 1 ? deleteCount : undefined, items }, extra: [] };
   }
 
   private static normalizeVariadicArgs(args: unknown[]): NormalizedMutationArgs {
@@ -85,6 +85,10 @@ export class ArrayMethodHandler {
     afterMutation?: () => void,
     arrayRef?: unknown[]
   ): R | undefined {
+    if ((keyStr === 'push' || keyStr === 'unshift') && args.length === 0) {
+      const current = arrayRef ?? storeInstance.readStore?.(targetPath);
+      return (Array.isArray(current) ? current.length : undefined) as R | undefined;
+    }
     const { value, extra } = ArrayMethodHandler.normalizeMutationArgs(keyStr, args);
     let result: unknown;
     const fastStore = storeInstance as FastArrayMutationStore<T>;

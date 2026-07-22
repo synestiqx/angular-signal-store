@@ -5,7 +5,7 @@
     "": {
       "name": "@synestiqx/angular-signal-store",
       "dependencies": {
-        "@synestiqx/jsondb": "file:../jsondb_git",
+        "@synestiqx/jsnq": "file:../jsnq_git",
       },
       "devDependencies": {
         "@angular/core": "^20.0.0",
@@ -21,7 +21,7 @@
   "packages": {
     "@angular/core": ["@angular/core@20.3.25", "", { "dependencies": { "tslib": "^2.3.0" }, "peerDependencies": { "@angular/compiler": "20.3.25", "rxjs": "^6.5.3 || ^7.4.0", "zone.js": "~0.15.0" }, "optionalPeers": ["@angular/compiler", "zone.js"] }, "sha512-B4XnnR5jzikZDvZ4PjwjAWZMT14dxrKrmJdwa/n0yp7rMPkIJTKF6ZJMg4d1pLWLLSsc2oWHioN3UrWlGqIKnA=="],
 
-    "@synestiqx/jsondb": ["@synestiqx/jsondb@file:../jsondb_git", { "devDependencies": { "typescript": "^5.4.0" } }],
+    "@synestiqx/jsnq": ["@synestiqx/jsnq@file:../jsnq_git", { "devDependencies": { "typescript": "^5.4.0" } }],
 
     "rxjs": ["rxjs@7.8.2", "", { "dependencies": { "tslib": "^2.1.0" } }, "sha512-dhKf903U/PQZY6boNNtAGdWbG85WAbjT/1xYoZIC7FAY0yWapOBQVsVrDl58W86//e1VpMNBtRV4MaXfdMySFA=="],
 

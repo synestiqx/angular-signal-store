@@ -1,5 +1,4 @@
-import { Signal, WritableSignal } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import type { BehaviorSubject } from 'rxjs';
 
 // Base Action
 export interface DevToolsAction {

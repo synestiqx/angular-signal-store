@@ -182,8 +182,9 @@ export class TypedArrayOperations<
     oldValue: unknown,
     info: NormalizedMutationInput
   ): unknown {
+    const before = this.signalStore.devActive ? structuredClone(array) : oldValue;
     const mutation = this.getOrchestrator(store).mutate(this.path, array, info.method, info.payload);
-    this.emitDev(info.method, info.devArgs, oldValue, array);
+    this.emitDev(info.method, info.devArgs, before, array);
     return mutation.result;
   }
 

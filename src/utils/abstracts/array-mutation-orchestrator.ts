@@ -4,7 +4,7 @@ export type ArrayMutationMethod = 'push' | 'unshift' | 'pop' | 'shift' | 'splice
 
 export interface SpliceOperation {
   start: number;
-  deleteCount: number;
+  deleteCount?: number;
   items: unknown[];
 }
 
@@ -143,14 +143,17 @@ export class ArrayMutationOrchestrator {
 
   private applySplice(arrayRef: unknown[], payload: unknown): unknown[] {
     const op = payload as SpliceOperation;
-    return arrayRef.splice(op.start, op.deleteCount, ...op.items);
+    return op.deleteCount === undefined
+      ? arrayRef.splice(op.start)
+      : arrayRef.splice(op.start, op.deleteCount, ...op.items);
   }
 
   private computeSpliceInvalidationStart(payload: unknown, length: number): number | null {
     const op = payload as SpliceOperation;
     const start = this.normalizeSpliceStart(op.start, length);
-    if (op.deleteCount <= 0 && op.items.length <= 0) return null;
-    if (start >= length && op.deleteCount <= 0) return null;
+    const deleteCount = op.deleteCount ?? Math.max(0, length - start);
+    if (deleteCount <= 0 && op.items.length <= 0) return null;
+    if (start >= length && deleteCount <= 0) return null;
     return start;
   }
 

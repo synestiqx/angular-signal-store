@@ -6,7 +6,7 @@ import { CursorManager } from './services/cursor.manager';
 import { SignalStore } from './signal-store.service';
 import { CreateStoreService, type StoreWakeupMode } from './create-store.core';
 import type { WakeUpPathOptions } from './services/reactivity-wakeup.service';
-import type { DevService } from '../devtools/dev.service';
+import type { AngularStoreDevtools } from './devtools-contract';
 import {
   StoreData,
   PathValue,
@@ -66,7 +66,7 @@ export class CreateStore<T extends StoreData = StoreData> {
     return new ArrayChain<T, P>(this.arrayOps(path));
   }
 
-  private readonly devService?: DevService;
+  private readonly devService?: AngularStoreDevtools;
   private readonly createService: CreateStoreService<T>;
   private _cursor?: CursorManager;
   private get cursor(): CursorManager { return this._cursor ??= new CursorManager(); }
@@ -249,7 +249,7 @@ export class CreateStore<T extends StoreData = StoreData> {
     private readonly signalStore: SignalStore,
     private readonly storeName: string,
     _proxyFactory?: ProxyFactory,
-    devService?: DevService
+    devService?: AngularStoreDevtools
   ) {
     this.devService = devService;
 
@@ -735,7 +735,7 @@ export class CreateStore<T extends StoreData = StoreData> {
   // changed leaves + the branch itself (no syncDescendants). The branch wake keeps
   // whole-array consumers correct; leaf wakes refresh the changed fields. Branch interest
   // (liveQuery-equivalent) still fires via its own version bump. Analogous to
-  // SolidStore.#commitPrecise; uses the shared collectFlatValueActionPaths for the paths.
+  // SolidStore.#commitPrecise; paths come from the shared mutation pass itself.
   commitMutationPrecise(branch: string, value: unknown, relPaths: readonly string[]): void {
     const normalizedBranch = PathUtils.normalizePath(branch);
     this.batch(() => {

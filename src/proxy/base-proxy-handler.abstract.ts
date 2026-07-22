@@ -186,6 +186,14 @@ export abstract class BaseProxyHandler<T extends StoreData = StoreData> {
   }
 
   private resolveArrayLength(context: ArrayProxyMethodContext): number | null {
+    const createService = (this.storeInstance as { getCreateService?: CreateStoreService }).getCreateService;
+    const lengthSignal = createService?.createArrayQueryComputed(
+      context.targetPath,
+      'length',
+      undefined
+    );
+    if (lengthSignal) return lengthSignal();
+
     const actualValue = Array.isArray(context.candidate)
       ? context.candidate
       : this.storeInstance.readStore(context.targetPath);
@@ -285,7 +293,7 @@ export abstract class BaseProxyHandler<T extends StoreData = StoreData> {
     };
   }
 
-  // Wspólny proxy setter pattern  
+  // Wspólny proxy setter pattern
   public createProxySetter(): ProxyHandler<object>['set'] {
     return (_, key: PropertyKey, value: unknown) => {
       if (this.isSymbolKey(key)) {

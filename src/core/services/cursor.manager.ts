@@ -3,7 +3,7 @@ import {
   JsonDataCursor,
   createJsonPathPlan,
   type JsonPathPlan,
-} from '@synestiqx/jsondb/data-engine';
+} from '@synestiqx/jsnq/data-engine';
 
 type PathPlan = JsonPathPlan;
 

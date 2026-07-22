@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import type { DevToolsEvent } from '../core/signal-store.service';
+import type { AngularStoreDevtools } from '../core/devtools-contract';
 import type { StoreDevToolsAction } from './types';
 
 // Use the canonical StoreDevToolsAction shape everywhere
@@ -9,7 +10,7 @@ type DevAction = StoreDevToolsAction;
 @Injectable({
   providedIn: 'root'
 })
-export class DevService {
+export class DevService implements AngularStoreDevtools {
   // Dedicated devtools bus (no nulls exposed)
   private actionSubject = new BehaviorSubject<DevToolsEvent | null>(null);
   private readActionSubject = new BehaviorSubject<DevToolsEvent | null>(null);

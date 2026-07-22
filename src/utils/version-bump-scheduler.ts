@@ -25,6 +25,7 @@ export class VersionBumpScheduler {
   }
 
   flushNow(): void {
+    if (this.depth > 0) return;
     this.scheduled = false;
     if (this.rafId !== null && typeof cancelAnimationFrame !== 'undefined') {
       cancelAnimationFrame(this.rafId);

@@ -5,19 +5,18 @@ import type { ProxyCallable } from '../interfaces/types';
 import { isValidPath } from '../types/type-guards';
 import { logger } from '../utils/logger';
 // Deep imports on purpose: this file sits in the INITIAL bundle graph. Importing the
-// jsondb barrel here would hoist every operator re-export into the initial chunk even
+// jsnq barrel here would hoist every operator re-export into the initial chunk even
 // though operators are only used by lazy pages (esbuild shared-chunk assignment).
-import JsonPipeline from '@synestiqx/jsondb/core/pipeline';
-import type { JsonOperator, PipelineStats, JsonLike } from '@synestiqx/jsondb/core/types';
-import { cloneJsonData } from '@synestiqx/jsondb/core/data-engine';
+import JsnqPipeline from '@synestiqx/jsnq/core/pipeline';
+import type { JsonOperator, PipelineStats, JsonLike } from '@synestiqx/jsnq/core/types';
+import { cloneJsonData } from '@synestiqx/jsnq/core/data-engine';
 import {
   applyDeepSugarPatch,
-  collectFlatValueActionPaths,
   collectPipelineIntent,
   isDeepSugarAction,
   tryFastPipelineMutation,
   tryFastStructuralMutation,
-} from '@synestiqx/jsondb/core/pipeline-fastpath';
+} from '@synestiqx/jsnq/core/pipeline-fastpath';
 import type { CreateStoreService } from '../core/create-store.core';
 import { computed, Signal } from '@angular/core';
 import { hashString } from '../utils/array-query-key.utils';
@@ -60,26 +59,26 @@ type PipelineCountResult = {
 };
 
 interface StorePipelineBuilder {
-  pipe: (...ops: Array<JsonOperator<JsonPipeline>>) => StorePipelineBuilder;
+  pipe: (...ops: Array<JsonOperator<JsnqPipeline>>) => StorePipelineBuilder;
   all: () => unknown;
   first: () => unknown;
   count: () => unknown;
 }
 
-type StorePipelineEntry = StorePipelineBuilder & ((...ops: Array<JsonOperator<JsonPipeline>>) => StorePipelineBuilder);
+type StorePipelineEntry = StorePipelineBuilder & ((...ops: Array<JsonOperator<JsnqPipeline>>) => StorePipelineBuilder);
 type ProxyApiMethod =
   | 'mutate' | 'query' | 'pipeline'
-  // opinia5: $-prefixed, collision-free jsondb read surface (parity with solid-store)
+  // opinia5: $-prefixed, collision-free jsnq read surface (parity with solid-store)
   | '$mutate' | '$query' | '$queryOne' | '$liveQuery' | '$liveQueryOne';
 type ReactivePipelineMode = 'all' | 'first' | 'count';
-type ReactivePipelineResultHandler = (pipeline: JsonPipeline) => unknown;
+type ReactivePipelineResultHandler = (pipeline: JsnqPipeline) => unknown;
 type EmptyPipelineResultHandler = () => unknown;
 type MutatingPipelineModeResult = {
-  executable: JsonPipeline;
+  executable: JsnqPipeline;
   results: unknown[];
   count: number;
 };
-type MutatingPipelineModeHandler = (pipeline: JsonPipeline) => MutatingPipelineModeResult;
+type MutatingPipelineModeHandler = (pipeline: JsnqPipeline) => MutatingPipelineModeResult;
 type MutatingPipelineResponseContext = MutatingPipelineModeResult & {
   stats: PipelineStats;
 };
@@ -130,11 +129,11 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
    * Detects if operators contain mutation operations (update, delete, insert, move, copy, etc.)
    * OPTIMIZED: Uses typed metadata flag instead of slow toString() + string.includes()
    */
-  private hasMutationOperators(operators: Array<JsonOperator<JsonPipeline>>): boolean {
+  private hasMutationOperators(operators: Array<JsonOperator<JsnqPipeline>>): boolean {
     return operators.some(op => op.__isMutation === true);
   }
 
-  private getOperatorCacheSegment(operator: JsonOperator<JsonPipeline>): string {
+  private getOperatorCacheSegment(operator: JsonOperator<JsnqPipeline>): string {
     const metadataKey = operator.__cacheKey;
     if (metadataKey) {
       return String(metadataKey);
@@ -164,15 +163,22 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
   }
 
   private clonePipelineInput<TValue>(value: TValue): TValue {
-    // Same JSON-like clone contract as the rest of jsondb (pipeline autoClone, SolidStore).
+    // Same JSON-like clone contract as the rest of jsnq (pipeline autoClone, SolidStore).
     return cloneJsonData(value);
+  }
+
+  private shouldTrackPipelineOperations(): boolean {
+    const service = (this.storeInstance as unknown as {
+      createServiceGetter?: CreateStoreService<StoreData>;
+    }).createServiceGetter;
+    return service?.signalStore?.devActive === true;
   }
 
   /**
    * Smart pipeline builder that auto-detects mutations and routes to mutate or reactive pipeline
    */
   private createSmartPipelineBuilder(pathPrefix: string): Function {
-    return (...operators: Array<JsonOperator<JsonPipeline>>) => {
+    return (...operators: Array<JsonOperator<JsnqPipeline>>) => {
       const builder = this.hasMutationOperators(operators)
         ? this.createMutatingPipelineBuilder(pathPrefix)
         : this.createReactivePipelineBuilder(pathPrefix);
@@ -185,7 +191,7 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
    * Usage: this.menuStore.allItems.mutate(where(...), update(...))
    */
   private createMutateMethod(): Function {
-    return (...operators: Array<JsonOperator<JsonPipeline>>) => {
+    return (...operators: Array<JsonOperator<JsnqPipeline>>) => {
       const fast = this.tryFastMutate(operators);
       if (fast) return fast.value;
       return this.executeMutatingPipeline(operators, 'all')?.value;
@@ -193,14 +199,14 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
   }
 
   /**
-   * COW hot paths for mutate(): the shared jsondb engine (pipeline-fastpath.ts) computes
+   * COW hot paths for mutate(): the shared jsnq engine (pipeline-fastpath.ts) computes
    * the next value without deep-cloning untouched branches, then we commit it exactly like
    * the pipeline path would. Covers the flat-array where+actions shape, the single-action
    * structural shortcuts (root insert, flat delete_key, insert_to-inside-array) and the
    * sugar deep patch. Returns undefined outside the guards, in which case the full
    * clone+pipeline flow below runs unchanged.
    */
-  private tryFastMutate(operators: Array<JsonOperator<JsonPipeline>>): { value: unknown } | undefined {
+  private tryFastMutate(operators: Array<JsonOperator<JsnqPipeline>>): { value: unknown } | undefined {
     const currentPath = this.fullPathPrefix;
     const storeInstance = this.storeInstance as unknown as IStoreInstance<StoreData> & {
       createServiceGetter?: CreateStoreService<StoreData>;
@@ -216,13 +222,18 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
       : (storeInstance.store as StoreData);
     if (currentValue === undefined) return undefined;
 
-    const fast = tryFastPipelineMutation(currentValue, operators);
+    const collectAffectedPaths = !!(
+      storeInstance.preciseMutationWake &&
+      currentPath &&
+      storeInstance.commitMutationPrecise
+    );
+    const fast = tryFastPipelineMutation(currentValue, operators, { collectAffectedPaths });
     if (fast) {
       if (fast.mutations > 0) {
         // Opt-in fine-grained wake for sub-path branches (flat value-action shape only) —
         // mirrors SolidStore: wake exactly the changed leaves instead of the whole branch.
         if (storeInstance.preciseMutationWake && currentPath && storeInstance.commitMutationPrecise) {
-          const paths = collectFlatValueActionPaths(currentValue, operators);
+          const paths = fast.affectedPaths;
           if (paths && paths.length > 0) {
             storeInstance.commitMutationPrecise(currentPath, fast.value, paths);
             return { value: fast.value };
@@ -253,14 +264,14 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
   }
 
   private createMutatingPipelineBuilder(_pathPrefix: string): StorePipelineEntry {
-    const operators: Array<JsonOperator<JsonPipeline>> = [];
+    const operators: Array<JsonOperator<JsnqPipeline>> = [];
 
     const execute = (mode: ReactivePipelineMode): PipelineExecutionResult | PipelineCountResult | undefined => {
       return this.executeMutatingPipeline(operators, mode);
     };
 
     const builder: StorePipelineBuilder = {
-      pipe: (...ops: Array<JsonOperator<JsonPipeline>>) => {
+      pipe: (...ops: Array<JsonOperator<JsnqPipeline>>) => {
         operators.push(...ops);
         return builder;
       },
@@ -269,7 +280,7 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
       count: () => execute('count')
     };
 
-    const entry = ((...ops: Array<JsonOperator<JsonPipeline>>) => {
+    const entry = ((...ops: Array<JsonOperator<JsnqPipeline>>) => {
       if (ops.length) {
         builder.pipe(...ops);
       }
@@ -285,7 +296,7 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
   }
 
   private executeMutatingPipeline(
-    operators: Array<JsonOperator<JsonPipeline>>,
+    operators: Array<JsonOperator<JsnqPipeline>>,
     mode: ReactivePipelineMode
   ): PipelineExecutionResult | PipelineCountResult | undefined {
     const currentPath = this.fullPathPrefix;
@@ -306,7 +317,9 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
       return undefined;
     }
 
-    let pipeline = new JsonPipeline(this.clonePipelineInput(currentValue) as JsonLike);
+    let pipeline = new JsnqPipeline(this.clonePipelineInput(currentValue) as JsonLike, {
+      trackOperations: this.shouldTrackPipelineOperations(),
+    });
     for (const op of operators) {
       pipeline = op(pipeline);
     }
@@ -321,18 +334,18 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
     return this.mutatingPipelineResponseHandlers[mode]({ ...executed, stats });
   }
 
-  private executeMutatingAll(pipeline: JsonPipeline): MutatingPipelineModeResult {
+  private executeMutatingAll(pipeline: JsnqPipeline): MutatingPipelineModeResult {
     const results = pipeline.all();
     return { executable: pipeline, results, count: results.length };
   }
 
-  private executeMutatingFirst(pipeline: JsonPipeline): MutatingPipelineModeResult {
+  private executeMutatingFirst(pipeline: JsnqPipeline): MutatingPipelineModeResult {
     const executable = pipeline.with({ options: { ...(pipeline.options as object), earlyTermination: true } });
     const results = executable.all();
     return { executable, results, count: results.length };
   }
 
-  private executeMutatingCount(pipeline: JsonPipeline): MutatingPipelineModeResult {
+  private executeMutatingCount(pipeline: JsnqPipeline): MutatingPipelineModeResult {
     const count = pipeline.count();
     return { executable: pipeline, results: [], count };
   }
@@ -412,7 +425,7 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
     const service = storeInstance.createServiceGetter;
 
     const collectOps = (): StorePipelineBuilder => {
-      const operators: Array<JsonOperator<JsonPipeline>> = [];
+      const operators: Array<JsonOperator<JsnqPipeline>> = [];
 
       const createCacheKey = (mode: string): string => {
         // Serialize operators with their metadata if available
@@ -448,7 +461,11 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
             return this.emptyPipelineResultHandlers[mode]();
           }
 
-          let pipeline = new JsonPipeline(currentValue as JsonLike);
+          const hasMutations = collectPipelineIntent(operators).actions.length > 0;
+          let pipeline = new JsnqPipeline(
+            (hasMutations ? cloneJsonData(currentValue) : currentValue) as JsonLike,
+            { trackOperations: this.shouldTrackPipelineOperations() },
+          );
           for (const op of operators) {
             pipeline = op(pipeline);
           }
@@ -467,7 +484,7 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
       };
 
       const builder: StorePipelineBuilder = {
-        pipe: (...ops: Array<JsonOperator<JsonPipeline>>) => {
+        pipe: (...ops: Array<JsonOperator<JsnqPipeline>>) => {
           operators.push(...ops);
           return builder;
         },
@@ -480,7 +497,7 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
     };
 
     const builder = collectOps();
-    const entry = ((...ops: Array<JsonOperator<JsonPipeline>>) => {
+    const entry = ((...ops: Array<JsonOperator<JsnqPipeline>>) => {
       if (ops.length) {
         builder.pipe(...ops);
       }
@@ -496,21 +513,23 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
   }
 
   /**
-   * opinia5: one-shot snapshot query using the JsonDB DSL. Returns matched values (not result
+   * opinia5: one-shot snapshot query using the JSNQ DSL. Returns matched values (not result
    * nodes), mirroring solid-store's $query/$queryOne. Non-reactive — reads the current value once.
    */
-  private createSnapshotQueryMethod(mode: 'all' | 'first'): (...ops: Array<JsonOperator<JsonPipeline>>) => unknown {
+  private createSnapshotQueryMethod(mode: 'all' | 'first'): (...ops: Array<JsonOperator<JsnqPipeline>>) => unknown {
     const path = this.fullPathPrefix;
-    return (...ops: Array<JsonOperator<JsonPipeline>>) => {
+    return (...ops: Array<JsonOperator<JsnqPipeline>>) => {
       const current = path
         ? this.storeInstance.readStore?.(path)
         : (this.storeInstance.store as StoreData);
       if (current === undefined) return mode === 'first' ? null : [];
-      let pipeline = new JsonPipeline(current as JsonLike);
+      const hasMutations = collectPipelineIntent(ops).actions.length > 0;
+      let pipeline = new JsnqPipeline((hasMutations ? cloneJsonData(current) : current) as JsonLike, {
+        trackOperations: this.shouldTrackPipelineOperations(),
+      });
       for (const op of ops) pipeline = op(pipeline);
       if (mode === 'first') {
-        const first = pipeline.first();
-        return first == null ? null : ((first as { data?: unknown }).data ?? first);
+        return pipeline.first();
       }
       return (pipeline.all() as Array<{ data?: unknown }>).map(
         (node) => (node && typeof node === 'object' && 'data' in node ? node.data : node)
@@ -523,16 +542,15 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
    * that recomputes when the queried branch changes. Built on the existing reactive pipeline
    * builder (version-tracked Angular computed); maps result nodes to matched values.
    */
-  private createLiveQueryMethod(mode: 'all' | 'first'): (...ops: Array<JsonOperator<JsonPipeline>>) => (() => unknown) {
+  private createLiveQueryMethod(mode: 'all' | 'first'): (...ops: Array<JsonOperator<JsnqPipeline>>) => (() => unknown) {
     const path = this.fullPathPrefix;
-    return (...ops: Array<JsonOperator<JsonPipeline>>) => {
+    return (...ops: Array<JsonOperator<JsnqPipeline>>) => {
       const entry = this.createReactivePipelineBuilder(path) as StorePipelineEntry;
       const chained = entry(...ops);
       if (mode === 'first') {
         const sig = chained.first() as Signal<unknown>;
         return () => {
-          const value = sig() as { data?: unknown } | null;
-          return value == null ? null : ((value as { data?: unknown }).data ?? value);
+          return sig() ?? null;
         };
       }
       const sig = chained.all() as Signal<unknown[]>;

@@ -1,6 +1,5 @@
-import { StoreDevToolsAction } from '../../devtools/types';
+import type { StoreDevToolsAction } from '../../devtools/types';
 import type { DevToolsEvent } from '../../core/signal-store.service';
-import { BehaviorSubject, Observable } from 'rxjs';
 
 /**
  * Centralized DevTools emitter.

@@ -125,7 +125,7 @@ export interface ArrayOperationResult<T, M extends ArrayMethod> {
 // Splice operation specific types
 export interface SpliceOperation {
   start: number;
-  deleteCount: number;
+  deleteCount?: number;
   items: unknown[];
 }
 

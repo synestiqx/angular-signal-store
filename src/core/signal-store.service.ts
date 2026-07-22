@@ -1,23 +1,33 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable, Optional } from '@angular/core';
 import { CreateStore } from './create-store.class';
 import { StoreProxy } from '../interfaces/types';
 import type { IStoreInstance } from '../interfaces/store-instance.interface';
 import { ProxyFactory } from '../proxy/proxy-factory.class';
-import { DevService } from '../devtools/dev.service';
 import { createCallableProxy as createCallableProxyUtil } from '../proxy/callable-proxy.util';
-import { BehaviorSubject, Observable, Subscription } from 'rxjs';
+import { EMPTY, Observable, Subscription } from 'rxjs';
 import { StoreData } from '../types/advanced-types';
 import { PathUtils } from '../utils/path-utils';
 import type { Stores } from '../types/registry';
-import { StoreDevToolsAction } from '../devtools/types';
+import type { StoreDevToolsAction } from '../devtools/types';
 import { setLoggerActive } from '../utils/logger';
+import {
+  SIGNAL_STORE_DEVTOOLS,
+  type AngularStoreDevtools,
+  type DevToolsEvent,
+} from './devtools-contract';
 
-// Static bus for DevTools events – shared across entire app
-export type DevToolsEvent = StoreDevToolsAction & { storeName?: string };
+export type { DevToolsEvent } from './devtools-contract';
 
-// Devtools subjects (exported for legacy imports)
-export const DevToolsActionSubject = new BehaviorSubject<DevToolsEvent | null>(null);
-export const DevToolsReadActionSubject = new BehaviorSubject<DevToolsEvent | null>(null);
+export interface WaitForStoreOptions {
+  timeoutMs?: number;
+  signal?: AbortSignal;
+}
+
+type StoreWaiter = {
+  resolve(store: StoreProxy<StoreData>): void;
+  reject(error: Error): void;
+  cleanup(): void;
+};
 
 @Injectable({
   providedIn: 'root'
@@ -33,28 +43,40 @@ export class SignalStore {
   private proxyFactories: Record<string, ProxyFactory> = Object.create(null);
   // Konfiguracja limitow proxy cache per store
   private proxyCacheLimits: Record<string, number> = Object.create(null);
+  private storeWaiters = new Map<string, Set<StoreWaiter>>();
   
   // ------------------------------
   // Graph-based stores - moved to CreateStoreService
   // ------------------------------
   
-  constructor(private devService: DevService) {
+  constructor(
+    @Optional() @Inject(SIGNAL_STORE_DEVTOOLS)
+    private devService: AngularStoreDevtools | null = null
+  ) {
     setLoggerActive(this.devActive);
   }
 
   /* ----------------------------------------------------------------
    * DevTools helpers – serve jako centralny "bus" dla panelu DevTools
    * --------------------------------------------------------------*/
-  public get devAction$() { return this.devService.action$; }
-  public get devReadAction$() { return this.devService.readAction$; }
+  public get devAction$() { return this.devService?.action$ ?? EMPTY; }
+  public get devReadAction$() { return this.devService?.readAction$ ?? EMPTY; }
+
+  attachDevtools(devtools: AngularStoreDevtools | null): void {
+    this.devService = devtools;
+  }
+
+  getDevtoolsAdapter(): AngularStoreDevtools | undefined {
+    return this.devService ?? undefined;
+  }
 
   emitDevAction(storeName: string, action: StoreDevToolsAction) {
     if(this.devActive) {
       const event: DevToolsEvent = { ...action, storeName };
-      queueMicrotask(() => this.devService.emitAction(event));
+      queueMicrotask(() => this.devService?.emitAction(event));
       // default also into read stream (history) unless proxy metrics (filtered below)
       if (action.type !== 'PROXY_METRICS') {
-        this.devService.emitRead(event);
+        this.devService?.emitRead(event);
       }
     }
     return;
@@ -76,7 +98,7 @@ export class SignalStore {
   // manual push to read stream if needed
   emitDevReadAction(storeName: string, data: StoreDevToolsAction) {
     const event: DevToolsEvent = { ...data, storeName };
-    this.devService.emitRead(event);
+    this.devService?.emitRead(event);
   }
 
   // Throttle metrics emission per store
@@ -101,7 +123,7 @@ export class SignalStore {
     };
     const event: DevToolsEvent = { ...proxyAction, storeName };
     // send only to action stream, not to read history (user request)
-    queueMicrotask(() => this.devService.emitAction(event));
+    queueMicrotask(() => this.devService?.emitAction(event));
   }
 
   createStore<T extends StoreData = StoreData>(
@@ -130,7 +152,7 @@ export class SignalStore {
     }
 
     // 1. Create low-level store instance responsible for all logic
-    const storeInstance = new CreateStore(this, name, undefined, this.devService);
+    const storeInstance = new CreateStore(this, name, undefined, this.devService ?? undefined);
 
     // Apply dependency mode if provided
     if (options?.dependencyMode) {
@@ -173,8 +195,62 @@ export class SignalStore {
     this.storeInstances[name] = storeInstance as CreateStore<StoreData>;
     this.storeProxies[name] = proxyStore as StoreProxy<StoreData>;
     this.proxyFactories[name] = proxyFactory;
+    this.resolveStoreWaiters(name, proxyStore as StoreProxy<StoreData>);
 
     return proxyStore;
+  }
+
+  /** Wait for a named proxy without changing the synchronous useStore/getStore contract. */
+  waitForStore<T extends StoreData = StoreData>(
+    name: string,
+    options: WaitForStoreOptions = {}
+  ): Promise<StoreProxy<T>> {
+    const existing = this.storeProxies[name];
+    if (existing) return Promise.resolve(existing as StoreProxy<T>);
+
+    const abortError = () => Object.assign(new Error(`waitForStore('${name}') aborted.`), { name: 'AbortError' });
+    if (options.signal?.aborted) return Promise.reject(abortError());
+
+    return new Promise<StoreProxy<T>>((resolve, reject) => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const waiters = this.storeWaiters.get(name) ?? new Set<StoreWaiter>();
+      const onAbort = () => finishReject(abortError());
+      const waiter: StoreWaiter = {
+        resolve: (store) => resolve(store as StoreProxy<T>),
+        reject,
+        cleanup: () => {
+          if (timer !== undefined) clearTimeout(timer);
+          options.signal?.removeEventListener('abort', onAbort);
+        },
+      };
+      const finishReject = (error: Error) => {
+        waiters.delete(waiter);
+        if (waiters.size === 0) this.storeWaiters.delete(name);
+        waiter.cleanup();
+        waiter.reject(error);
+      };
+
+      waiters.add(waiter);
+      this.storeWaiters.set(name, waiters);
+      options.signal?.addEventListener('abort', onAbort, { once: true });
+      if (options.timeoutMs !== undefined) {
+        const timeoutMs = Math.max(0, options.timeoutMs);
+        timer = setTimeout(
+          () => finishReject(new Error(`waitForStore('${name}') timed out after ${timeoutMs}ms.`)),
+          timeoutMs
+        );
+      }
+    });
+  }
+
+  private resolveStoreWaiters(name: string, store: StoreProxy<StoreData>): void {
+    const waiters = this.storeWaiters.get(name);
+    if (!waiters) return;
+    this.storeWaiters.delete(name);
+    for (const waiter of waiters) {
+      waiter.cleanup();
+      waiter.resolve(store);
+    }
   }
 
   /**
