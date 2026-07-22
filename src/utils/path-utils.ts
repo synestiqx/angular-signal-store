@@ -5,7 +5,6 @@ import { hasForbiddenPathSegment } from './path-safety';
 import {
   directNumericParentPathCore,
   enumerateAncestorPathsCore,
-  getBySegmentsCore,
   getParentPathNormalizedCore,
   getPathKeyCore,
   isNumericSegmentCore,
@@ -15,7 +14,6 @@ import {
   normalizePathCore,
   pathExistsCore,
   resolveVersionPathCore,
-  setByPathCore,
   splitPathCore,
   type VersionDependencyMode,
 } from './path-core';
@@ -24,8 +22,10 @@ import { GenerationalCache } from './generational-cache';
 import {
   clearJsonPlanCache,
   createJsonPathPlan,
+  getJsonBySegments,
   getJsonPlanCacheStats,
   setJsonPlanCacheLimit,
+  writeJsonPathValue,
 } from '@adsq/jsnq/core/data-engine';
 
 export type { VersionDependencyMode } from './path-core';
@@ -101,7 +101,7 @@ export class PathUtils {
       if (hasForbiddenPathSegment(segments)) {
         return undefined;
       }
-      return getBySegmentsCore<PathValue<T, P>>(obj, segments) as PathValue<T, P> | undefined;
+      return getJsonBySegments<PathValue<T, P>>(obj, segments) as PathValue<T, P> | undefined;
     } catch (error) {
       // Don't throw for read operations, just return undefined
       logger.warn(`Failed to access path "${path}":`, error);
@@ -147,7 +147,7 @@ export class PathUtils {
 
     try {
       const normalizedPath = PathUtils.normalizePath(path);
-      setByPathCore(obj, normalizedPath, value);
+      writeJsonPathValue(obj, normalizedPath, value);
     } catch (error) {
       throw StoreErrorFactory.pathAccess(path, 'set', error as Error);
     }

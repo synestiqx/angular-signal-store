@@ -45,7 +45,8 @@
     "bench:store": "bun test/store-throughput-bench.ts",
     "verify:exports": "node scripts/verify-exports.mjs",
     "test:jsnq-optional": "bun test/jsnq-optional.test.ts",
-    "bench:paths": "bun test/path-bench.ts"
+    "bench:paths": "bun test/path-bench.ts",
+    "test:path-parity": "bun test/path-core-jsnq-parity.test.ts"
   },
   "peerDependencies": {
     "@angular/core": ">=20.0.0 <23.0.0",
