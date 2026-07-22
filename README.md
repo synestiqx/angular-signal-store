@@ -127,6 +127,18 @@ Declare optional fields or an index signature when TypeScript must accept keys t
 
 ## JSNQ Operations
 
+JSNQ is a **separate entry point**. Import it once during application bootstrap to enable
+`mutate`, `$query`, `$queryOne`, `$liveQuery`, and `$liveQueryOne`:
+
+```ts
+import '@adsq/angular-signal-store/jsnq';
+```
+
+Registration is synchronous — there is no dynamic import and nothing to await, so a
+mutation issued immediately after bootstrap works. Applications that only read and write
+store paths never load the query engine and are **11.9 kB gzip smaller** for it. Calling a
+JSNQ API without the import throws an error naming the missing entry point.
+
 ```ts
 import where from '@adsq/jsnq/operators/where';
 import update from '@adsq/jsnq/operators/update';
@@ -228,6 +240,7 @@ Applications that never import the `/devtools` entry do not load its implementat
 ## Package Entries
 
 - `@adsq/angular-signal-store`: store runtime and public types.
+- `@adsq/angular-signal-store/jsnq`: optional query/mutation engine registration.
 - `@adsq/angular-signal-store/devtools`: optional development adapter/provider.
 - `@adsq/jsnq/operators/<name>`: focused JSNQ operators.
 

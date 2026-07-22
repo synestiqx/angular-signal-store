@@ -152,7 +152,12 @@ after the outermost batch, including on exception paths. A single write needs no
 
 ## Queries and bulk mutations (JSNQ)
 
+The core does not import the JSNQ engine. Import the entry point once in an application
+that calls `mutate`, `$query`, or `$liveQuery` — otherwise those calls throw an actionable
+error. Registration is synchronous, so there is no async timing hazard:
+
 ```ts
+import '@adsq/angular-signal-store/jsnq';
 import where from '@adsq/jsnq/operators/where';
 import update from '@adsq/jsnq/operators/update';
 
@@ -186,5 +191,6 @@ Applications that never import `/devtools` do not load its implementation.
 - Call leaves (`path()`), do not call loop items (`item.field`).
 - Use `track` in `@for` — prefer a stable id over `$index` for reordered data.
 - Reach for `batch()` only when several writes must be observed as one update.
+- Import `@adsq/angular-signal-store/jsnq` once before using `mutate` / `$query`.
 - Use `mutate` / `$query` for array-wide work instead of hand-rolled loops.
 - Do not import from `dist/` or deep internal paths; use the documented entries only.

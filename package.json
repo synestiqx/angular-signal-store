@@ -1,6 +1,6 @@
 {
   "name": "@adsq/angular-signal-store",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Angular SignalStore — reactive, proxy-based store with fine-grained signal wake. Uses jsnq (separate dependency) for queries/mutations.",
   "repository": {
     "type": "git",
@@ -15,6 +15,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/fesm2022/adsq-angular-signal-store.mjs"
     },
+    "./jsnq": {
+      "types": "./dist/jsnq/index.d.ts",
+      "default": "./dist/fesm2022/adsq-angular-signal-store-jsnq.mjs"
+    },
     "./devtools": {
       "types": "./dist/devtools/index.d.ts",
       "default": "./dist/fesm2022/adsq-angular-signal-store-devtools.mjs"
@@ -23,7 +27,9 @@
       "default": "./package.json"
     }
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*-jsnq.mjs"
+  ],
   "files": [
     "dist",
     "README.md",
@@ -37,7 +43,8 @@
     "typecheck": "tsc --noEmit",
     "test:smoke": "bun test/smoke.ts",
     "bench:store": "bun test/store-throughput-bench.ts",
-    "verify:exports": "node scripts/verify-exports.mjs"
+    "verify:exports": "node scripts/verify-exports.mjs",
+    "test:jsnq-optional": "bun test/jsnq-optional.test.ts"
   },
   "peerDependencies": {
     "@angular/core": ">=20.0.0 <23.0.0",

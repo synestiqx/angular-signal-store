@@ -5,6 +5,7 @@
  */
 import { CreateStore, SignalStore } from '../src/index';
 import { computed } from '@angular/core';
+import '../src/jsnq'; // optional JSNQ entry point: required for mutate/$query
 import { where, update, moveToMatches } from '@adsq/jsnq';
 
 function assert(condition: unknown, message: string): void {

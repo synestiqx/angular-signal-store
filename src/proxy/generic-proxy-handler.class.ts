@@ -7,16 +7,10 @@ import { logger } from '../utils/logger';
 // Deep imports on purpose: this file sits in the INITIAL bundle graph. Importing the
 // jsnq barrel here would hoist every operator re-export into the initial chunk even
 // though operators are only used by lazy pages (esbuild shared-chunk assignment).
-import JsnqPipeline from '@adsq/jsnq/core/pipeline';
+import type JsnqPipeline from '@adsq/jsnq/core/pipeline';
 import type { JsonOperator, PipelineStats, JsonLike } from '@adsq/jsnq/core/types';
 import { cloneJsonData } from '@adsq/jsnq/core/data-engine';
-import {
-  applyDeepSugarPatch,
-  collectPipelineIntent,
-  isDeepSugarAction,
-  tryFastPipelineMutation,
-  tryFastStructuralMutation,
-} from '@adsq/jsnq/core/pipeline-fastpath';
+import { requireJsnqBridge } from '../core/jsnq-contract';
 import type { CreateStoreService } from '../core/create-store.core';
 import { computed, Signal } from '@angular/core';
 import { hashString } from '../utils/array-query-key.utils';
@@ -227,7 +221,8 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
       currentPath &&
       storeInstance.commitMutationPrecise
     );
-    const fast = tryFastPipelineMutation(currentValue, operators, { collectAffectedPaths });
+    const jsnq = requireJsnqBridge('mutate');
+    const fast = jsnq.tryFastPipelineMutation(currentValue, operators as readonly unknown[], { collectAffectedPaths });
     if (fast) {
       if (fast.mutations > 0) {
         // Opt-in fine-grained wake for sub-path branches (flat value-action shape only) —
@@ -244,9 +239,9 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
       return { value: fast.value };
     }
 
-    const intent = collectPipelineIntent(operators);
+    const intent = jsnq.collectPipelineIntent(operators as readonly unknown[]);
 
-    const structural = tryFastStructuralMutation(currentValue, intent);
+    const structural = jsnq.tryFastStructuralMutation(currentValue, intent);
     if (structural) {
       this.commitPipelineData(storeInstance, currentPath, structural.value as JsonLike);
       return { value: structural.value };
@@ -254,8 +249,8 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
 
     // Sugar deep patch (where + update({patch})): not representable in the raw pipeline,
     // shared helper is the canonical semantics for every host.
-    if (intent.criteria.length > 0 && intent.actions.length > 0 && intent.actions.every(isDeepSugarAction)) {
-      const patched = applyDeepSugarPatch(currentValue, intent.criteria, intent.actions);
+    if (intent.criteria.length > 0 && intent.actions.length > 0 && intent.actions.every(jsnq.isDeepSugarAction)) {
+      const patched = jsnq.applyDeepSugarPatch(currentValue, intent.criteria, intent.actions);
       this.commitPipelineData(storeInstance, currentPath, patched as JsonLike);
       return { value: patched };
     }
@@ -317,9 +312,9 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
       return undefined;
     }
 
-    let pipeline = new JsnqPipeline(this.clonePipelineInput(currentValue) as JsonLike, {
+    let pipeline = requireJsnqBridge('mutate').createPipeline(this.clonePipelineInput(currentValue) as JsonLike, {
       trackOperations: this.shouldTrackPipelineOperations(),
-    });
+    }) as JsnqPipeline;
     for (const op of operators) {
       pipeline = op(pipeline);
     }
@@ -461,11 +456,12 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
             return this.emptyPipelineResultHandlers[mode]();
           }
 
-          const hasMutations = collectPipelineIntent(operators).actions.length > 0;
-          let pipeline = new JsnqPipeline(
+          const reactiveJsnq = requireJsnqBridge('$liveQuery');
+          const hasMutations = reactiveJsnq.collectPipelineIntent(operators as readonly unknown[]).actions.length > 0;
+          let pipeline = reactiveJsnq.createPipeline(
             (hasMutations ? cloneJsonData(currentValue) : currentValue) as JsonLike,
             { trackOperations: this.shouldTrackPipelineOperations() },
-          );
+          ) as JsnqPipeline;
           for (const op of operators) {
             pipeline = op(pipeline);
           }
@@ -523,10 +519,11 @@ export class GenericProxyHandler<T extends StoreData = StoreData> extends BasePr
         ? this.storeInstance.readStore?.(path)
         : (this.storeInstance.store as StoreData);
       if (current === undefined) return mode === 'first' ? null : [];
-      const hasMutations = collectPipelineIntent(ops).actions.length > 0;
-      let pipeline = new JsnqPipeline((hasMutations ? cloneJsonData(current) : current) as JsonLike, {
+      const snapshotJsnq = requireJsnqBridge('$query');
+      const hasMutations = snapshotJsnq.collectPipelineIntent(ops as readonly unknown[]).actions.length > 0;
+      let pipeline = snapshotJsnq.createPipeline((hasMutations ? cloneJsonData(current) : current) as JsonLike, {
         trackOperations: this.shouldTrackPipelineOperations(),
-      });
+      }) as JsnqPipeline;
       for (const op of ops) pipeline = op(pipeline);
       if (mode === 'first') {
         return pipeline.first();
