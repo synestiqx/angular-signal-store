@@ -1,6 +1,6 @@
 {
   "name": "@adsq/angular-signal-store",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Angular SignalStore — reactive, proxy-based store with fine-grained signal wake. Uses jsnq (separate dependency) for queries/mutations.",
   "repository": {
     "type": "git",
@@ -9,15 +9,15 @@
   "homepage": "https://github.com/adsqx/angular-signal-store#readme",
   "bugs": "https://github.com/adsqx/angular-signal-store/issues",
   "type": "module",
-  "module": "./dist/fesm2022/synestiqx-angular-signal-store.mjs",
+  "module": "./dist/fesm2022/adsq-angular-signal-store.mjs",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/fesm2022/synestiqx-angular-signal-store.mjs"
+      "default": "./dist/fesm2022/adsq-angular-signal-store.mjs"
     },
     "./devtools": {
       "types": "./dist/devtools/index.d.ts",
-      "default": "./dist/fesm2022/synestiqx-angular-signal-store-devtools.mjs"
+      "default": "./dist/fesm2022/adsq-angular-signal-store-devtools.mjs"
     },
     "./package.json": {
       "default": "./package.json"
@@ -33,10 +33,11 @@
   ],
   "scripts": {
     "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json",
-    "prepack": "npm run build",
+    "prepack": "npm run build && npm run verify:exports",
     "typecheck": "tsc --noEmit",
     "test:smoke": "bun test/smoke.ts",
-    "bench:store": "bun test/store-throughput-bench.ts"
+    "bench:store": "bun test/store-throughput-bench.ts",
+    "verify:exports": "node scripts/verify-exports.mjs"
   },
   "peerDependencies": {
     "@angular/core": ">=20.0.0 <23.0.0",
