@@ -66,6 +66,55 @@ store.user.tags.pop();
 store.dashboard.tiles = store.dashboard.tiles() + 1;
 ```
 
+## In A Component Template
+
+Expose the proxy as a component field and read it directly in the template. No `async`
+pipe, no `signal()` wrapper, no subscription:
+
+```ts
+@Component({ selector: 'app-dashboard', templateUrl: './dashboard.component.html' })
+export class DashboardComponent {
+  readonly store = this.appStore.store;
+
+  constructor(private readonly appStore: AppStore) {}
+
+  addTile(): void {
+    this.store.dashboard.tiles = this.store.dashboard.tiles() + 1;
+  }
+}
+```
+
+```html
+<h1>{{ store.user.name() }}</h1>
+<p>{{ store.dashboard.tiles() }} tiles</p>
+
+@for (tag of store.user.tags(); track tag) {
+  <span class="tag">{{ tag }}</span>
+}
+
+@for (service of store.services(); track service.name) {
+  <div class="row">
+    <strong>{{ service.name }}</strong>
+    <span>{{ service.rps }}</span>
+  </div>
+}
+
+<button (click)="addTile()">Add tile</button>
+```
+
+Three rules cover every template:
+
+- **A leaf is called**: `{{ store.user.name() }}`. The call is the reactive read, so only
+  this component's bindings for that path rerender when it changes.
+- **An array is called to iterate it**, then each item is a plain value read without
+  parentheses: `@for (service of store.services(); track service.name)` then
+  `{{ service.name }}`. Items are snapshots, not nested accessors.
+- **`length` is reactive without a call**: `{{ store.history.length }}` tracks pushes and
+  pops without materialising the array.
+
+Writes stay ordinary assignments, so an event handler is a one-liner and needs no action,
+reducer, or dispatch.
+
 Dynamic nested keys are supported by the runtime proxy:
 
 ```ts
