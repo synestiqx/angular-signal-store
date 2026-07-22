@@ -1,6 +1,6 @@
 {
   "name": "@adsq/angular-signal-store",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Angular SignalStore — reactive, proxy-based store with fine-grained signal wake. Uses jsnq (separate dependency) for queries/mutations.",
   "repository": {
     "type": "git",
@@ -58,7 +58,7 @@
     "state-management",
     "reactive",
     "proxy",
-    "@adsq/jsnq"
+    "jsnq"
   ],
   "license": "MIT"
 }
