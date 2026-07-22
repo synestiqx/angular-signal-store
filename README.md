@@ -5,9 +5,17 @@ Angular signal store with a callable nested proxy API. It uses the independent `
 ## Install
 
 ```sh
-npm install @adsq/jsnq @adsq/angular-signal-store
+npm install @adsq/angular-signal-store
 # or
-bun add @adsq/jsnq @adsq/angular-signal-store
+bun add @adsq/angular-signal-store
+```
+
+`@adsq/jsnq` is a peer dependency, so npm and bun install it for you. Declare it in your
+own `package.json` as well when the application imports JSNQ operators directly, so that
+strict installers such as pnpm and Yarn PnP resolve those imports:
+
+```sh
+npm install @adsq/jsnq
 ```
 
 Angular, RxJS, and JSNQ are peers. The package supports Angular 20 through 22, is APF partial-compiled with the lowest supported Angular version, and is tested against the current Angular 22 line. This avoids a second Angular runtime and keeps forward linker compatibility.
