@@ -231,6 +231,26 @@ Applications that never import the `/devtools` entry do not load its implementat
 - `@adsq/angular-signal-store/devtools`: optional development adapter/provider.
 - `@adsq/jsnq/operators/<name>`: focused JSNQ operators.
 
+## Use With AI Coding Agents
+
+The package ships a `SKILL.md` written in the [Agent Skills](https://agentskills.io)
+format, covering the architecture rule, the template rules, batching, wake modes, and JSNQ.
+Install it so an agent applies the store correctly instead of guessing at the proxy API:
+
+```sh
+# this project only
+mkdir -p .claude/skills/angular-signal-store
+cp node_modules/angular-signal-store/SKILL.md .claude/skills/angular-signal-store/
+
+# or for every project
+mkdir -p ~/.claude/skills/angular-signal-store
+cp node_modules/angular-signal-store/SKILL.md ~/.claude/skills/angular-signal-store/
+```
+
+Claude Code picks the skill up without a restart and loads it when the task involves this
+store. Agents that do not read `.claude/skills/` can be pointed at
+`node_modules/angular-signal-store/SKILL.md` directly.
+
 ## Verify
 
 ```sh
