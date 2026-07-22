@@ -1,11 +1,11 @@
 /**
- * Headless smoke for the standalone Angular SignalStore consuming @synestiqx/jsnq
+ * Headless smoke for the standalone Angular SignalStore consuming jsnq
  * as an external dependency (proves the extraction: no in-tree jsnq folder).
  * Run: bun test/smoke.ts
  */
 import { CreateStore, SignalStore } from '../src/index';
 import { computed } from '@angular/core';
-import { where, update, moveToMatches } from '@synestiqx/jsnq';
+import { where, update, moveToMatches } from 'jsnq';
 
 function assert(condition: unknown, message: string): void {
   if (!condition) throw new Error(`Assertion failed: ${message}`);
@@ -42,9 +42,9 @@ assert(store.runtime.dynamic() === 'created-through-proxy', 'deep dynamic key as
 // read
 assert(store.users[0].name() === 'Ann', 'proxy read works');
 
-// mutate through the proxy using @synestiqx/jsnq operators
+// mutate through the proxy using jsnq operators
 store.users.mutate(where('id', '===', 1), update('name', 'Ada'));
-assert((ss.readStore('smoke', 'users') as Array<{ name: string }>)[0].name === 'Ada', 'mutate via @synestiqx/jsnq committed');
+assert((ss.readStore('smoke', 'users') as Array<{ name: string }>)[0].name === 'Ada', 'mutate via jsnq committed');
 assert((ss.readStore('smoke', 'users') as Array<{ name: string }>)[1].name === 'Bob', 'sibling intact (COW)');
 assert(store.users[0].name() === 'Ada', 'proxy reflects committed mutation');
 
@@ -149,4 +149,4 @@ let abortName = '';
 try { await abortedWait; } catch (error) { abortName = (error as Error).name; }
 assert(abortName === 'AbortError', 'waitForStore abort signal rejects with AbortError');
 
-console.log('Angular SignalStore (consuming @synestiqx/jsnq) headless smoke passed.');
+console.log('Angular SignalStore (consuming jsnq) headless smoke passed.');

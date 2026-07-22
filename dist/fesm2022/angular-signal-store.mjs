@@ -1,10 +1,10 @@
 import * as i0 from '@angular/core';
 import { computed, signal, InjectionToken, Optional, Inject, Injectable } from '@angular/core';
-import { createJsonPathPlan, setJsonPlanCacheLimit, getJsonPlanCacheStats, clearJsonPlanCache, cloneJsonData } from '@synestiqx/jsnq/core/data-engine';
-import { JsonDataCursor, createJsonPathPlan as createJsonPathPlan$1 } from '@synestiqx/jsnq/data-engine';
+import { createJsonPathPlan, setJsonPlanCacheLimit, getJsonPlanCacheStats, clearJsonPlanCache, cloneJsonData } from 'jsnq/core/data-engine';
+import { JsonDataCursor, createJsonPathPlan as createJsonPathPlan$1 } from 'jsnq/data-engine';
 import { BehaviorSubject, Observable, combineLatest, EMPTY } from 'rxjs';
-import JsnqPipeline from '@synestiqx/jsnq/core/pipeline';
-import { tryFastPipelineMutation, collectPipelineIntent, tryFastStructuralMutation, isDeepSugarAction, applyDeepSugarPatch } from '@synestiqx/jsnq/core/pipeline-fastpath';
+import JsnqPipeline from 'jsnq/core/pipeline';
+import { tryFastPipelineMutation, collectPipelineIntent, tryFastStructuralMutation, isDeepSugarAction, applyDeepSugarPatch } from 'jsnq/core/pipeline-fastpath';
 
 // src/app/store/types/errors.ts
 // Base store error class
@@ -6036,4 +6036,4 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.26", ngImpo
  */
 
 export { CreateStore, SIGNAL_STORE_DEVTOOLS, SignalStore };
-//# sourceMappingURL=synestiqx-angular-signal-store.mjs.map
+//# sourceMappingURL=angular-signal-store.mjs.map

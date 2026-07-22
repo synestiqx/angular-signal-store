@@ -313,4 +313,4 @@ function provideSignalStoreDevtools() {
  */
 
 export { DevService, provideSignalStoreDevtools };
-//# sourceMappingURL=synestiqx-angular-signal-store-devtools.mjs.map
+//# sourceMappingURL=angular-signal-store-devtools.mjs.map

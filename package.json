@@ -1,7 +1,7 @@
 {
-  "name": "@synestiqx/angular-signal-store",
+  "name": "angular-signal-store",
   "version": "0.1.0",
-  "description": "Angular SignalStore — reactive, proxy-based store with fine-grained signal wake. Uses @synestiqx/jsnq (separate dependency) for queries/mutations.",
+  "description": "Angular SignalStore — reactive, proxy-based store with fine-grained signal wake. Uses jsnq (separate dependency) for queries/mutations.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/synestiqx/angular-signal-store.git"
@@ -38,14 +38,14 @@
   },
   "peerDependencies": {
     "@angular/core": ">=20.0.0 <23.0.0",
-    "@synestiqx/jsnq": "^0.1.0",
+    "jsnq": "^0.1.0",
     "rxjs": "^6.5.3 || ^7.4.0"
   },
   "devDependencies": {
     "@angular/compiler": "20.3.26",
     "@angular/compiler-cli": "20.3.26",
     "@angular/core": "20.3.26",
-    "@synestiqx/jsnq": "github:synestiqx/jsnq",
+    "jsnq": "^0.1.0",
     "ng-packagr": "20.3.2",
     "rxjs": "7.8.2",
     "tslib": "^2.8.1",
